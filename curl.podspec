@@ -9,9 +9,11 @@ Pod::Spec.new do |s|
   s.source           = { :git => 'https://github.com/zhtut/curl.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '9.0'
+  # s.osx.deployment_target = '10.11' # 暂时不支持mac
 
   s.source_files = 'curl/include/*.h'
-  s.vendored_libraries = 'curl/lib/*.a'
-  s.ios.library = 'z'
+  # s.osx.vendored_libraries = 'curl/lib/*_Mac.a'
+  s.ios.vendored_libraries = 'curl/lib/*_iOS.a'
+  s.library = 'z'
   
 end
