@@ -5,10 +5,10 @@
 xcuserdata/
 DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-build/curl/lib
-build/curl/include
+build/curl/lib/
+build/curl/include/
 build/curl/curl-7.88.1.tar.gz
-build/curl/curl-7.88
-build/nghttp2/iOS
+build/curl/curl-7.88.1/
+build/nghttp2/iOS/
 build/nghttp2/nghttp2-1.52.0.tar.gz
-build/nghttp2/lib
+build/nghttp2/lib/
