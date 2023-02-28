@@ -15,21 +15,6 @@
 
 set -e
 
-# Formatting
-default="\033[39m"
-wihte="\033[97m"
-green="\033[32m"
-red="\033[91m"
-yellow="\033[33m"
-
-bold="\033[0m${green}\033[1m"
-subbold="\033[0m${green}"
-archbold="\033[0m${yellow}\033[1m"
-normal="${white}\033[0m"
-dim="\033[0m${white}\033[2m"
-alert="\033[0m${red}\033[1m"
-alertdim="\033[0m${red}\033[2m"
-
 CURL_VERSION="curl-7.88.1"
 IOS_SDK_VERSION=""
 IOS_MIN_SDK_VERSION="7.1"
@@ -37,60 +22,66 @@ IPHONEOS_DEPLOYMENT_TARGET="9.0"
 
 DEVELOPER=$(xcode-select -print-path)
 
-build_dir="build"
-mkdir -p ${build_dir}
+CC_BITCODE_FLAG="-fembed-bitcode"
+
+NGHTTP2="$(pwd)/../nghttp2/build"
 
 buildIOS() {
-	ARCH=$1
-	BITCODE=$2
+	ARCH="$1"
+	PLATFORM="$2"
 
 	pushd . >/dev/null
 	cd "${CURL_VERSION}"
 
-	if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-	fi
-
-	CC_BITCODE_FLAG="-fembed-bitcode"
-
-	NGHTTP2CFG="--with-nghttp2=${NGHTTP2}/iOS/${ARCH}"
-	NGHTTP2LIB="-L${NGHTTP2}/iOS/${ARCH}/lib"
+	NGHTTP2CFG="--with-nghttp2=${NGHTTP2}/${PLATFORM}/${ARCH}"
+	NGHTTP2LIB="-L${NGHTTP2}/${PLATFORM}/${ARCH}/lib"
 
 	export $PLATFORM
 	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
+	export CROSS_SDK="${PLATFORM}.sdk"
 	export BUILD_TOOLS="${DEVELOPER}"
 	export CC="${BUILD_TOOLS}/usr/bin/gcc"
-	export CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} ${CC_BITCODE_FLAG}"
+	export CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} ${CC_BITCODE_FLAG}"
 	export LDFLAGS="-arch ${ARCH} -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} ${NGHTTP2LIB}"
 
-	echo -e "${subbold}Building ${CURL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${archbold}${ARCH}${dim} ${BITCODE}"
+	echo -e "${subbold}Building ${CURL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${archbold}${ARCH}"
 
 	# 用编译出来的一直找不到error: --with-openssl was given but OpenSSL could not be detected，说明--with-openssl用法有问题，还不如用系统的签
 	SSL_CFG="--with-secure-transport"
 
-	if [[ "${ARCH}" == *"arm64"* || "${ARCH}" == "arm64e" ]]; then
-		./configure -prefix="${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}" --disable-shared --enable-static -with-random=/dev/urandom ${SSL_CFG} ${NGHTTP2CFG} --host="arm-apple-darwin" &>"${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}.log"
+	log_path="${build_dir}/${CURL_VERSION}-${PLATFORM}-${ARCH}.log"
+
+	host_cfg=""
+
+	if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
+		host_cfg="--host=arm-apple-darwin"
 	else
-		./configure -prefix="${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}" --disable-shared --enable-static -with-random=/dev/urandom ${SSL_CFG} ${NGHTTP2CFG} --host="${ARCH}-apple-darwin" &>"${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}.log"
+		host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
 	fi
 
-	make -j8 >>"${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}.log" 2>&1
-	make install >>"${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}.log" 2>&1
-	make clean >>"${build_dir}/${CURL_VERSION}-iOS-${ARCH}-${BITCODE}.log" 2>&1
+	echo "准备./configure"
+
+	common_cfg="--disable-shared --enable-static -with-random=/dev/urandom"
+	prefix_cfg="-prefix=${build_dir}/${PLATFORM}/${ARCH}"
+	./configure ${prefix_cfg} ${common_cfg} ${SSL_CFG} ${NGHTTP2CFG} ${host_cfg} &>${log_path}
+
+	echo "./configure 完成，开始make"
+
+	make -j8 >>"${log_path}" 2>&1
+
+	echo "make完成，开始install"
+	make install >>"${log_path}" 2>&1
+
+	echo "install完成，开始clean"
+	make clean >>"${log_path}" 2>&1
 	popd >/dev/null
 }
 
+build_dir="$(pwd)/build"
+
 echo -e "${bold}Cleaning up${dim}"
-rm -rf include/curl/* lib/*
-
-mkdir -p lib
-mkdir -p include/curl/
-
-rm -rf "${build_dir}/${CURL_VERSION}-*"
-rm -rf "${build_dir}/${CURL_VERSION}-*.log"
+rm -rf ${build_dir}
+mkdir -p ${build_dir}
 
 rm -rf "${CURL_VERSION}"
 
@@ -104,31 +95,14 @@ fi
 echo "Unpacking curl"
 tar xfz "${CURL_VERSION}.tar.gz"
 
-echo -e "${bold}Building iOS libraries (bitcode)${dim}"
-buildIOS "armv7" "bitcode"
-buildIOS "armv7s" "bitcode"
-buildIOS "arm64" "bitcode"
-buildIOS "arm64e" "bitcode"
-buildIOS "x86_64" "bitcode"
-buildIOS "i386" "bitcode"
-
-lipo \
-	"${build_dir}/${CURL_VERSION}-iOS-armv7-bitcode/lib/libcurl.a" \
-	"${build_dir}/${CURL_VERSION}-iOS-armv7s-bitcode/lib/libcurl.a" \
-	"${build_dir}/${CURL_VERSION}-iOS-i386-bitcode/lib/libcurl.a" \
-	"${build_dir}/${CURL_VERSION}-iOS-arm64-bitcode/lib/libcurl.a" \
-	"${build_dir}/${CURL_VERSION}-iOS-arm64e-bitcode/lib/libcurl.a" \
-	"${build_dir}/${CURL_VERSION}-iOS-x86_64-bitcode/lib/libcurl.a" \
-	-create -output lib/libcurl_iOS.a
+echo -e "${bold}Building iOS libraries${dim}"
+buildIOS "armv7" "iPhoneOS"
+buildIOS "arm64" "iPhoneSimulator"
+buildIOS "arm64" "iPhoneOS"
+buildIOS "x86_64" "iPhoneSimulator"
 
 echo -e "${bold}Cleaning up${dim}"
 # rm -rf ${build_dir}/${CURL_VERSION}-*
 # rm -rf ${CURL_VERSION}
 
-echo "Checking libraries"
-xcrun -sdk iphoneos lipo -info lib/*.a
-
-#reset trap
-trap - INT TERM EXIT
-
-echo -e "${normal}Done"
+echo -e "Done"
