@@ -9,10 +9,39 @@ else
 	cd ..
 fi
 
-## Curl Build
-echo -e "${bold}Building Curl${normal}"
-cd curl
-./libcurl-build.sh
-cd ..
+if [[ -e "curl/build/iPhoneOS" ]]; then
+	echo 'curl已编译好'
+else
+	## Curl Build
+	echo -e "${bold}Building Curl${normal}"
+	cd curl
+	./libcurl-build.sh
+	cd ..
+fi
+
+iphone_os=iPhoneOS
+rm -rf ${iphone_os}
+mkdir ${iphone_os}
+lipo -create \
+	"curl/build/${iphone_os}/arm64/lib/libcurl.a" \
+	"curl/build/${iphone_os}/armv7/lib/libcurl.a" \
+	-output ${iphone_os}/libcurl.a
+
+iphone_simulator="iPhoneSimulator"
+rm -rf ${iphone_simulator}
+mkdir ${iphone_simulator}
+lipo -create \
+	"curl/build/${iphone_simulator}/arm64/lib/libcurl.a" \
+	"curl/build/${iphone_simulator}/x86_64/lib/libcurl.a" \
+	-output ${iphone_simulator}/libcurl.a
+
+rm -rf curl.xcframework
+xcodebuild -create-xcframework -output curl.xcframework \
+	-library ${iphone_os}/libcurl.a -headers curl/build/iPhoneOS/arm64/include/curl \
+	-library ${iphone_simulator}/libcurl.a -headers curl/build/iPhoneSimulator/arm64/include/curl
+
+echo "copy to root"
+rm -rf ../curl.xcframework
+cp -r curl.xcframework ../curl.xcframework
 
 echo "done"

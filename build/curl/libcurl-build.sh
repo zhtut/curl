@@ -102,7 +102,7 @@ buildIOS "arm64" "iPhoneOS"
 buildIOS "x86_64" "iPhoneSimulator"
 
 echo -e "${bold}Cleaning up${dim}"
-# rm -rf ${build_dir}/${CURL_VERSION}-*
-# rm -rf ${CURL_VERSION}
+rm -rf ${CURL_VERSION}
+rm -rf "${CURL_VERSION}.tar.gz"
 
 echo -e "Done"

@@ -1,3 +1,0 @@
-module curl {
-	header "curl.h"
-}
