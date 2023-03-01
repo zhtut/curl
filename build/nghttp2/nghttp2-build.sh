@@ -45,7 +45,7 @@ else
 	fi
 fi
 
-buildIOS() {
+build() {
 	ARCH=$1
 	PLATFORM=$2
 
@@ -54,7 +54,6 @@ buildIOS() {
 
 	CC_BITCODE_FLAG="-fembed-bitcode"
 
-	export $PLATFORM
 	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
 	export CROSS_SDK="${PLATFORM}.sdk"
 	export BUILD_TOOLS="${DEVELOPER}"
@@ -66,17 +65,36 @@ buildIOS() {
 
 	echo -e "${subbold}Building ${NGHTTP2_VERSION} for ${PLATFORM} ${archbold}${ARCH}${dim}"
 
-	if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
-		host_cfg=--host="arm-apple-darwin"
-	else
-		host_cfg=--host="${ARCH}-apple-darwin"
-	fi
+	# if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
+	# 	host_cfg=--host="arm-apple-darwin"
+	# else
+	host_cfg=--host="${ARCH}-apple-darwin"
+	# fi
 
 	common_cfg="--disable-shared --disable-app --disable-threads --enable-lib-only"
 	./configure ${common_cfg} --prefix="${build_dir}/${PLATFORM}/${ARCH}" "${host_cfg}" &>"${log_path}"
+	if [[ $? == 0 ]]; then
+		echo "./configure 完成，开始make"
+	else
+		echo "./configure 失败"
+		exit 1
+	fi
 
 	make -j8 >>"${log_path}" 2>&1
+	if [[ $? == 0 ]]; then
+		echo "make完成，开始install"
+	else
+		echo "make失败"
+		exit 1
+	fi
+
 	make install >>"${log_path}" 2>&1
+	if [[ $? == 0 ]]; then
+		echo "install完成，开始clean"
+	else
+		echo "install失败"
+		exit 1
+	fi
 	make clean >>"${log_path}" 2>&1
 	popd >/dev/null
 }
@@ -101,10 +119,12 @@ echo "Unpacking nghttp2"
 tar xfz "${NGHTTP2_VERSION}.tar.gz"
 
 echo -e "${bold}Building iOS libraries (bitcode)${dim}"
-buildIOS "armv7" "iPhoneOS"
-buildIOS "arm64" "iPhoneSimulator"
-buildIOS "arm64" "iPhoneOS"
-buildIOS "x86_64" "iPhoneSimulator"
+build "armv7" "iPhoneOS"
+build "arm64" "iPhoneSimulator"
+build "arm64" "iPhoneOS"
+build "x86_64" "iPhoneSimulator"
+build "arm64" "MacOSX"
+build "x86_64" "MacOSX"
 
 rm -rf "${NGHTTP2_VERSION}.tar.gz"
 rm -rf "${NGHTTP2_VERSION}"

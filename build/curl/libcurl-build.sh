@@ -26,7 +26,7 @@ CC_BITCODE_FLAG="-fembed-bitcode"
 
 NGHTTP2="$(pwd)/../nghttp2/build"
 
-buildIOS() {
+build() {
 	ARCH="$1"
 	PLATFORM="$2"
 
@@ -36,7 +36,6 @@ buildIOS() {
 	NGHTTP2CFG="--with-nghttp2=${NGHTTP2}/${PLATFORM}/${ARCH}"
 	NGHTTP2LIB="-L${NGHTTP2}/${PLATFORM}/${ARCH}/lib"
 
-	export $PLATFORM
 	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
 	export CROSS_SDK="${PLATFORM}.sdk"
 	export BUILD_TOOLS="${DEVELOPER}"
@@ -53,26 +52,40 @@ buildIOS() {
 
 	host_cfg=""
 
-	if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
-		host_cfg="--host=arm-apple-darwin"
-	else
-		host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
-	fi
+	# if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
+	# 	host_cfg="--host=arm-apple-darwin"
+	# else
+	host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
+	# fi
 
 	echo "准备./configure"
 
 	common_cfg="--disable-shared --enable-static -with-random=/dev/urandom"
 	prefix_cfg="-prefix=${build_dir}/${PLATFORM}/${ARCH}"
 	./configure ${prefix_cfg} ${common_cfg} ${SSL_CFG} ${NGHTTP2CFG} ${host_cfg} &>${log_path}
-
-	echo "./configure 完成，开始make"
+	if [[ $? == 0 ]]; then
+		echo "./configure 完成，开始make"
+	else
+		echo "./configure 失败"
+		exit 1
+	fi
 
 	make -j8 >>"${log_path}" 2>&1
+	if [[ $? == 0 ]]; then
+		echo "make完成，开始install"
+	else
+		echo "make失败"
+		exit 1
+	fi
 
-	echo "make完成，开始install"
 	make install >>"${log_path}" 2>&1
 
-	echo "install完成，开始clean"
+	if [[ $? == 0 ]]; then
+		echo "install完成，开始clean"
+	else
+		echo "install失败"
+		exit 1
+	fi
 	make clean >>"${log_path}" 2>&1
 	popd >/dev/null
 }
@@ -96,10 +109,12 @@ echo "Unpacking curl"
 tar xfz "${CURL_VERSION}.tar.gz"
 
 echo -e "${bold}Building iOS libraries${dim}"
-buildIOS "armv7" "iPhoneOS"
-buildIOS "arm64" "iPhoneSimulator"
-buildIOS "arm64" "iPhoneOS"
-buildIOS "x86_64" "iPhoneSimulator"
+build "armv7" "iPhoneOS"
+build "arm64" "iPhoneSimulator"
+build "arm64" "iPhoneOS"
+build "x86_64" "iPhoneSimulator"
+build "arm64" "MacOSX"
+build "x86_64" "MacOSX"
 
 echo -e "${bold}Cleaning up${dim}"
 rm -rf ${CURL_VERSION}

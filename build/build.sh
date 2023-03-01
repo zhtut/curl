@@ -35,10 +35,19 @@ lipo -create \
 	"curl/build/${iphone_simulator}/x86_64/lib/libcurl.a" \
 	-output ${iphone_simulator}/libcurl.a
 
+mac_osx="MacOSX"
+rm -rf ${mac_osx}
+mkdir ${mac_osx}
+lipo -create \
+	"curl/build/${mac_osx}/arm64/lib/libcurl.a" \
+	"curl/build/${mac_osx}/x86_64/lib/libcurl.a" \
+	-output ${mac_osx}/libcurl.a
+
 rm -rf curl.xcframework
 xcodebuild -create-xcframework -output curl.xcframework \
-	-library ${iphone_os}/libcurl.a -headers curl/build/iPhoneOS/arm64/include/curl \
-	-library ${iphone_simulator}/libcurl.a -headers curl/build/iPhoneSimulator/arm64/include/curl
+	-library ${iphone_os}/libcurl.a -headers curl/build/${iphone_os}/arm64/include/curl \
+	-library ${iphone_simulator}/libcurl.a -headers curl/build/${iphone_simulator}/arm64/include/curl \
+	-library ${mac_osx}/libcurl.a -headers curl/build/${mac_osx}/arm64/include/curl
 
 echo "copy to root"
 rm -rf ../curl.xcframework
