@@ -8,8 +8,8 @@ Pod::Spec.new do |s|
   s.author           = { 'ztgtut' => 'ztgtut@github.com' }
   s.source           = { :git => 'https://github.com/zhtut/curl.git', :tag => s.version.to_s }
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.11'
+  s.ios.deployment_target = '11.0'
+  s.osx.deployment_target = '10.13'
 
   # s.source_files = 'curl/include/*.h'
   # s.osx.vendored_libraries = 'curl/lib/*_Mac.a'
