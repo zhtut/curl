@@ -15,6 +15,8 @@ Pod::Spec.new do |s|
   # s.osx.vendored_libraries = 'curl/lib/*_Mac.a'
   # s.ios.vendored_libraries = 'curl/lib/*_iOS.a'
   # s.library = 'z'
+  
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
 
   s.vendored_frameworks = 'curl.xcframework'
   
