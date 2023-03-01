@@ -1,5 +1,5 @@
 framework module curl {
-  umbrella header "curl-umbrella.h"
+  umbrella header "curl.h"
 
   export *
   module * { export * }

@@ -1,7 +1,0 @@
-framework module curl {
-  umbrella header "curl-umbrella.h"
-
-  export *
-  module * { export * }
-}
-

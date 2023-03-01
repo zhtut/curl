@@ -1,38 +1,10 @@
 modules_info="""framework module curl {
-  umbrella header \"curl-umbrella.h\"
+  umbrella header \"curl.h\"
 
   export *
   module * { export * }
 }
 """
-umbrella_header_str='''#ifdef __OBJC__
-#import <UIKit/UIKit.h>
-#else
-#ifndef FOUNDATION_EXPORT
-#if defined(__cplusplus)
-#define FOUNDATION_EXPORT extern "C"
-#else
-#define FOUNDATION_EXPORT extern
-#endif
-#endif
-#endif
-
-#import "stdcheaders.h"
-#import "header.h"
-#import "options.h"
-#import "mprintf.h"
-#import "easy.h"
-#import "curl.h"
-#import "websockets.h"
-#import "curlver.h"
-#import "system.h"
-#import "typecheck-gcc.h"
-#import "multi.h"
-#import "urlapi.h"
-
-FOUNDATION_EXPORT double curlVersionNumber;
-FOUNDATION_EXPORT const unsigned char curlVersionString[];
-'''
 
 make_IOS_framework() {
     platform="$1"
@@ -46,7 +18,6 @@ make_IOS_framework() {
         $(ls curl/build/${platform}/*/lib/libcurl.a) \
         -output ${platform}/${framework_name}/curl
     cp -r curl/build/${platform}/arm64/include/curl/ ${platform}/${framework_name}/Headers
-    echo "${umbrella_header_str}" >${platform}/${framework_name}/Headers/curl-umbrella.h
     echo "${modules_info}" >${platform}/${framework_name}/Modules/module.modulemap
 
     info_path="Resources/${platform}.plist"
@@ -67,7 +38,6 @@ make_mac_framework() {
         $(ls curl/build/${platform}/*/lib/libcurl.a) \
         -output ${framework_path}/Versions/A/curl
     cp -r curl/build/${platform}/arm64/include/curl/ ${framework_path}/Versions/A/Headers
-    echo "${umbrella_header_str}" >${framework_path}/Versions/A/Headers/curl-umbrella.h
     echo "${modules_info}" >${framework_path}/Versions/A/Modules/module.modulemap
 
     info_path="Resources/${platform}.plist"
@@ -109,4 +79,4 @@ if [[ $? != 0 ]]; then
 fi
 echo "copy to root"
 rm -rf ../${out_xcframework}
-cp -r ${out_xcframework} ../${out_xcframework}
+cp -rP ${out_xcframework} ../${out_xcframework} #默认-r会把替身变成文件，加-P就不会了
