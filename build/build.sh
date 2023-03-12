@@ -15,7 +15,7 @@ else
 	## Curl Build
 	echo -e "${bold}Building Curl${normal}"
 	cd curl
-	./libcurl-build.sh
+	./curl-build.sh
 	cd ..
 fi
 

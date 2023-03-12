@@ -16,9 +16,6 @@
 set -e
 
 CURL_VERSION="curl-7.88.1"
-IOS_SDK_VERSION=""
-IOS_MIN_SDK_VERSION="7.1"
-IPHONEOS_DEPLOYMENT_TARGET="9.0"
 
 DEVELOPER=$(xcode-select -print-path)
 

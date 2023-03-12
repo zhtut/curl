@@ -13,12 +13,9 @@
 #
 # NOTE: pkg-config is required
 
-NGHTTP2_VERNUM="1.52.0"
-IOS_MIN_SDK_VERSION="7.1"
-
 # --- Edit this to update version ---
 
-NGHTTP2_VERSION="nghttp2-${NGHTTP2_VERNUM}"
+NGHTTP2_VERSION="nghttp2-1.52.0"
 DEVELOPER=$(xcode-select -print-path)
 
 # Check to see if pkg-config is already installed
@@ -110,7 +107,7 @@ rm -rf "${NGHTTP2_VERSION}"
 
 if [ ! -e ${NGHTTP2_VERSION}.tar.gz ]; then
 	echo "Downloading ${NGHTTP2_VERSION}.tar.gz"
-	curl -LO https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VERNUM}/${NGHTTP2_VERSION}.tar.gz
+	curl -LO https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VERSION}/${NGHTTP2_VERSION}.tar.gz
 else
 	echo "Using ${NGHTTP2_VERSION}.tar.gz"
 fi
