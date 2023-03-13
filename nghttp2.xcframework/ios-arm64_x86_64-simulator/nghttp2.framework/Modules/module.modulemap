@@ -1,0 +1,6 @@
+framework module nghttp2 {
+  umbrella header "nghttp2.h"
+
+  export *
+  module * { export * }
+}

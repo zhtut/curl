@@ -11,13 +11,13 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '11.0'
   s.osx.deployment_target = '10.13'
 
-  # s.source_files = 'curl/include/*.h'
-  # s.osx.vendored_libraries = 'curl/lib/*_Mac.a'
-  # s.ios.vendored_libraries = 'curl/lib/*_iOS.a'
-  # s.library = 'z'
+  #  s.source_files = 'curl/include/**/*.h'
+  #   s.osx.vendored_libraries = 'curl/lib/*_Mac.a'
+  #  s.ios.vendored_libraries = 'curl/lib/*.a'
   
+  s.library = 'z'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
 
-  s.vendored_frameworks = 'curl.xcframework'
+  s.vendored_frameworks = 'curl.xcframework', 'nghttp2.xcframework'
   
 end

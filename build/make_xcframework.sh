@@ -110,5 +110,5 @@ make_frameworks() {
     rm -rf ${out_xcframework}
 }
 
-# make_frameworks nghttp2
+make_frameworks nghttp2
 make_frameworks curl
