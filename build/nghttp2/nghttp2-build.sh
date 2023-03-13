@@ -20,7 +20,7 @@ DEVELOPER=$(xcode-select -print-path)
 
 # Check to see if pkg-config is already installed
 if (type "pkg-config" >/dev/null); then
-	echo "  pkg-config already installed"
+	echo "pkg-config already installed"
 else
 	echo -e "${alertdim}** WARNING: pkg-config not installed... attempting to install.${dim}"
 
@@ -51,25 +51,21 @@ build() {
 
 	CC_BITCODE_FLAG="-fembed-bitcode"
 
-	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export CROSS_SDK="${PLATFORM}.sdk"
-	export BUILD_TOOLS="${DEVELOPER}"
-	export CC="${BUILD_TOOLS}/usr/bin/gcc"
-	export CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} ${CC_BITCODE_FLAG}"
-	export LDFLAGS="-arch ${ARCH} -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK}"
+	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
+	arch_cfg="-arch ${ARCH}"
+	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG}"
 
 	log_path="${build_dir}/${NGHTTP2_VERSION}-${PLATFORM}-${ARCH}.log"
 
-	echo -e "${subbold}Building ${NGHTTP2_VERSION} for ${PLATFORM} ${archbold}${ARCH}${dim}"
+	echo -e "Building ${NGHTTP2_VERSION} for ${PLATFORM} ${ARCH}"
 
-	# if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
-	# 	host_cfg=--host="arm-apple-darwin"
-	# else
-	host_cfg=--host="${ARCH}-apple-darwin"
-	# fi
+	host_cfg="--host=${ARCH}-apple-darwin"
 
-	common_cfg="--disable-shared --disable-app --disable-threads --enable-lib-only"
-	./configure ${common_cfg} --prefix="${build_dir}/${PLATFORM}/${ARCH}" "${host_cfg}" &>"${log_path}"
+	common_cfg="--disable-shared --enable-lib-only"
+	destination_path="${build_dir}/${PLATFORM}/${ARCH}"
+	mkdir -p ${destination_path}
+	prefix_cfg="--prefix=${destination_path}"
+	./configure ${common_cfg} ${prefix_cfg} ${host_cfg} &>${log_path}
 	if [[ $? == 0 ]]; then
 		echo "./configure 完成，开始make"
 	else
@@ -92,6 +88,7 @@ build() {
 		echo "install失败"
 		exit 1
 	fi
+
 	make clean >>"${log_path}" 2>&1
 	popd >/dev/null
 }
@@ -107,7 +104,8 @@ rm -rf "${NGHTTP2_VERSION}"
 
 if [ ! -e ${NGHTTP2_VERSION}.tar.gz ]; then
 	echo "Downloading ${NGHTTP2_VERSION}.tar.gz"
-	curl -LO https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VERSION}/${NGHTTP2_VERSION}.tar.gz
+	version_number=${NGHTTP2_VERSION#*-}
+	curl -LO https://github.com/nghttp2/nghttp2/releases/download/v${version_number}/${NGHTTP2_VERSION}.tar.gz
 else
 	echo "Using ${NGHTTP2_VERSION}.tar.gz"
 fi

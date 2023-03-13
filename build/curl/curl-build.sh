@@ -12,15 +12,14 @@
 #   https://github.com/jasonacox/Build-OpenSSL-cURL
 # Preston Jennings
 #   https://github.com/prestonj/Build-OpenSSL-cURL
+#   curl: https://curl.se/download/
 
 set -e
 
 CURL_VERSION="curl-7.88.1"
 
 DEVELOPER=$(xcode-select -print-path)
-
 CC_BITCODE_FLAG="-fembed-bitcode"
-
 NGHTTP2="$(pwd)/../nghttp2/build"
 
 build() {
@@ -33,27 +32,18 @@ build() {
 	NGHTTP2CFG="--with-nghttp2=${NGHTTP2}/${PLATFORM}/${ARCH}"
 	NGHTTP2LIB="-L${NGHTTP2}/${PLATFORM}/${ARCH}/lib"
 
-	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export CROSS_SDK="${PLATFORM}.sdk"
-	export BUILD_TOOLS="${DEVELOPER}"
-	export CC="${BUILD_TOOLS}/usr/bin/gcc"
-	export CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} ${CC_BITCODE_FLAG}"
-	export LDFLAGS="-arch ${ARCH} -isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} ${NGHTTP2LIB}"
+	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
+	arch_cfg="-arch ${ARCH}"
+	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG}"
 
-	echo -e "${subbold}Building ${CURL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${archbold}${ARCH}"
+	echo -e "Building ${CURL_VERSION} for ${PLATFORM} ${ARCH}"
 
 	# 用编译出来的一直找不到error: --with-openssl was given but OpenSSL could not be detected，说明--with-openssl用法有问题，还不如用系统的签
 	SSL_CFG="--with-secure-transport"
 
 	log_path="${build_dir}/${CURL_VERSION}-${PLATFORM}-${ARCH}.log"
 
-	host_cfg=""
-
-	# if [[ "${ARCH}" == "arm64" || "${ARCH}" == "arm64e" ]]; then
-	# 	host_cfg="--host=arm-apple-darwin"
-	# else
 	host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
-	# fi
 
 	echo "准备./configure"
 
@@ -76,20 +66,20 @@ build() {
 	fi
 
 	make install >>"${log_path}" 2>&1
-
 	if [[ $? == 0 ]]; then
 		echo "install完成，开始clean"
 	else
 		echo "install失败"
 		exit 1
 	fi
+
 	make clean >>"${log_path}" 2>&1
 	popd >/dev/null
 }
 
 build_dir="$(pwd)/build"
 
-echo -e "${bold}Cleaning up${dim}"
+echo -e "Cleaning up"
 rm -rf ${build_dir}
 mkdir -p ${build_dir}
 
@@ -105,7 +95,7 @@ fi
 echo "Unpacking curl"
 tar xfz "${CURL_VERSION}.tar.gz"
 
-echo -e "${bold}Building iOS libraries${dim}"
+echo -e "Building iOS libraries"
 build "armv7" "iPhoneOS"
 build "arm64" "iPhoneSimulator"
 build "arm64" "iPhoneOS"
@@ -113,7 +103,7 @@ build "x86_64" "iPhoneSimulator"
 build "arm64" "MacOSX"
 build "x86_64" "MacOSX"
 
-echo -e "${bold}Cleaning up${dim}"
+echo -e "Cleaning up"
 rm -rf ${CURL_VERSION}
 rm -rf "${CURL_VERSION}.tar.gz"
 
