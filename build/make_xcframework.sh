@@ -110,5 +110,33 @@ make_frameworks() {
     rm -rf ${out_xcframework}
 }
 
-make_frameworks nghttp2
+merge_lib() {
+    curl_lib="$1"
+    nghttp2_lib="$2"
+    temp="temp"
+    rm -rf $temp
+    mkdir $temp
+    cp $curl_lib ${temp}/
+    cp $nghttp2_lib ${temp}/
+    cd $temp
+    ar -x libcurl.a
+    ar -x libnghttp2.a
+    rm -rf *.a
+    libtool -static -o libcurl.a *.o
+    rm -rf *.o
+    cd ..
+    cp ${temp}/libcurl.a $curl_lib
+    rm -rf $temp
+}
+
+curl_path="curl/build/*/*/lib/*.a"
+nghttp2_path="nghttp2/build/*/*/lib/*.a"
+for path in $(ls ${curl_path}); do
+    echo ${path}
+    center=${path#*curl}
+    center=${center%curl.a*}
+    nghttp2_path="nghttp2${center}nghttp2.a"
+    merge_lib ${path} ${nghttp2_path}
+done
+
 make_frameworks curl
