@@ -53,9 +53,18 @@ build() {
 
 	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
 	arch_cfg="-arch ${ARCH}"
-	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG}"
-
-	log_path="${build_dir}/${NGHTTP2_VERSION}-${PLATFORM}-${ARCH}.log"
+	if [[ "${PLATFORM}" == "MacOSX" ]]; then
+		export DEPLOYMENT_TARGET=10.13
+		min_version="-mmacosx-version-min=$DEPLOYMENT_TARGET"
+	else
+		export DEPLOYMENT_TARGET=9.0
+		if [[ "${PLATFORM}" == "iPhoneOS" ]]; then
+			min_version="-miphoneos-version-min=$DEPLOYMENT_TARGET"
+		else
+			min_version="-miphonesimulator-version-min=$DEPLOYMENT_TARGET"
+		fi
+	fi
+	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG} ${min_version}"
 
 	echo -e "Building ${NGHTTP2_VERSION} for ${PLATFORM} ${ARCH}"
 
@@ -65,7 +74,7 @@ build() {
 	destination_path="${build_dir}/${PLATFORM}/${ARCH}"
 	mkdir -p ${destination_path}
 	prefix_cfg="--prefix=${destination_path}"
-	./configure ${common_cfg} ${prefix_cfg} ${host_cfg} &>${log_path}
+	./configure ${common_cfg} ${prefix_cfg} ${host_cfg}
 	if [[ $? == 0 ]]; then
 		echo "./configure 完成，开始make"
 	else
@@ -73,7 +82,7 @@ build() {
 		exit 1
 	fi
 
-	make -j8 >>"${log_path}" 2>&1
+	make -j8
 	if [[ $? == 0 ]]; then
 		echo "make完成，开始install"
 	else
@@ -81,7 +90,7 @@ build() {
 		exit 1
 	fi
 
-	make install >>"${log_path}" 2>&1
+	make install
 	if [[ $? == 0 ]]; then
 		echo "install完成，开始clean"
 	else
@@ -89,7 +98,7 @@ build() {
 		exit 1
 	fi
 
-	make clean >>"${log_path}" 2>&1
+	make clean
 	popd >/dev/null
 }
 

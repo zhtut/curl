@@ -16,7 +16,7 @@
 
 set -e
 
-CURL_VERSION="curl-7.88.1"
+CURL_VERSION="curl-8.0.1"
 
 DEVELOPER=$(xcode-select -print-path)
 CC_BITCODE_FLAG="-fembed-bitcode"
@@ -34,14 +34,23 @@ build() {
 
 	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
 	arch_cfg="-arch ${ARCH}"
-	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG}"
+	if [[ "${PLATFORM}" == "MacOSX" ]]; then
+		export DEPLOYMENT_TARGET=10.13
+		min_version="-mmacosx-version-min=$DEPLOYMENT_TARGET"
+	else
+		export DEPLOYMENT_TARGET=9.0
+		if [[ "${PLATFORM}" == "iPhoneOS" ]]; then
+			min_version="-miphoneos-version-min=$DEPLOYMENT_TARGET"
+		else
+			min_version="-miphonesimulator-version-min=$DEPLOYMENT_TARGET"
+		fi
+	fi
+	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG} ${min_version}"
 
 	echo -e "Building ${CURL_VERSION} for ${PLATFORM} ${ARCH}"
 
 	# 用编译出来的一直找不到error: --with-openssl was given but OpenSSL could not be detected，说明--with-openssl用法有问题，还不如用系统的签
 	SSL_CFG="--with-secure-transport"
-
-	log_path="${build_dir}/${CURL_VERSION}-${PLATFORM}-${ARCH}.log"
 
 	host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
 
@@ -49,7 +58,7 @@ build() {
 
 	common_cfg="--disable-shared --enable-static -with-random=/dev/urandom"
 	prefix_cfg="-prefix=${build_dir}/${PLATFORM}/${ARCH}"
-	./configure ${prefix_cfg} ${common_cfg} ${SSL_CFG} ${NGHTTP2CFG} ${host_cfg} &>${log_path}
+	./configure ${prefix_cfg} ${common_cfg} ${SSL_CFG} ${NGHTTP2CFG} ${host_cfg}
 	if [[ $? == 0 ]]; then
 		echo "./configure 完成，开始make"
 	else
@@ -57,7 +66,7 @@ build() {
 		exit 1
 	fi
 
-	make -j8 >>"${log_path}" 2>&1
+	make -j8
 	if [[ $? == 0 ]]; then
 		echo "make完成，开始install"
 	else
@@ -65,7 +74,7 @@ build() {
 		exit 1
 	fi
 
-	make install >>"${log_path}" 2>&1
+	make install
 	if [[ $? == 0 ]]; then
 		echo "install完成，开始clean"
 	else
@@ -73,7 +82,7 @@ build() {
 		exit 1
 	fi
 
-	make clean >>"${log_path}" 2>&1
+	make clean
 	popd >/dev/null
 }
 
