@@ -16,7 +16,7 @@
 
 set -e
 
-CURL_VERSION="curl-8.0.1"
+CURL_VERSION="curl-8.1.2"
 
 DEVELOPER=$(xcode-select -print-path)
 CC_BITCODE_FLAG="-fembed-bitcode"
