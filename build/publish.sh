@@ -8,5 +8,5 @@ cd ..
 git add .
 git commit -m "feat: add version '$version'"
 git tag add -a $version -m "feat: add version '$version'"
-git push -u origin $version
+git push --tags
 pod trunk push *.podspec --verbose --use-libraries --allow-warnings --skip-import-validation --skip-tests
