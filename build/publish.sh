@@ -11,5 +11,5 @@ sed -i '' "s/$version_str/$new_version_str/" *.podspec
 git add .
 git commit -m "feat: add version '$version'"
 git tag -a $version -m "feat: add version '$version'"
-git push --tags
+git push --all
 pod trunk push *.podspec --verbose --use-libraries --allow-warnings --skip-import-validation --skip-tests
