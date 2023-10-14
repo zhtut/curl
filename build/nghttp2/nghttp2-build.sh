@@ -15,7 +15,7 @@
 
 # --- Edit this to update version ---
 
-NGHTTP2_VERSION="nghttp2-1.55.1"
+NGHTTP2_VERSION="nghttp2-1.57.0"
 DEVELOPER=$(xcode-select -print-path)
 
 # Check to see if pkg-config is already installed
