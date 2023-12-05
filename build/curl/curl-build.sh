@@ -20,31 +20,20 @@ CURL_VERSION="curl-8.4.0"
 
 DEVELOPER=$(xcode-select -print-path)
 CC_BITCODE_FLAG="-fembed-bitcode"
+
 NGHTTP2="$(pwd)/../nghttp2/build"
 
 build() {
 	ARCH="$1"
 	PLATFORM="$2"
-
-	pushd . >/dev/null
-	cd "${CURL_VERSION}"
+	min_version=$3
 
 	NGHTTP2CFG="--with-nghttp2=${NGHTTP2}/${PLATFORM}/${ARCH}"
 	NGHTTP2LIB="-L${NGHTTP2}/${PLATFORM}/${ARCH}/lib"
 
 	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
 	arch_cfg="-arch ${ARCH}"
-	if [[ "${PLATFORM}" == "MacOSX" ]]; then
-		export DEPLOYMENT_TARGET=10.13
-		min_version="-mmacosx-version-min=$DEPLOYMENT_TARGET"
-	else
-		export DEPLOYMENT_TARGET=9.0
-		if [[ "${PLATFORM}" == "iPhoneOS" ]]; then
-			min_version="-miphoneos-version-min=$DEPLOYMENT_TARGET"
-		else
-			min_version="-miphonesimulator-version-min=$DEPLOYMENT_TARGET"
-		fi
-	fi
+
 	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG} ${min_version}"
 
 	echo -e "Building ${CURL_VERSION} for ${PLATFORM} ${ARCH}"
@@ -52,7 +41,7 @@ build() {
 	# 用编译出来的一直找不到error: --with-openssl was given but OpenSSL could not be detected，说明--with-openssl用法有问题，还不如用系统的签
 	SSL_CFG="--with-secure-transport"
 
-	host_cfg="--host=${ARCH}-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
+	host_cfg="--host=arm64-apple-darwin" #等号右边的双引号不能省略，要不然传值容易出现问题
 
 	echo "准备./configure"
 
@@ -83,7 +72,6 @@ build() {
 	fi
 
 	make clean
-	popd >/dev/null
 }
 
 build_dir="$(pwd)/build"
@@ -105,12 +93,22 @@ echo "Unpacking curl"
 tar xfz "${CURL_VERSION}.tar.gz"
 
 echo -e "Building iOS libraries"
-build "armv7" "iPhoneOS"
-build "arm64" "iPhoneSimulator"
-build "arm64" "iPhoneOS"
-build "x86_64" "iPhoneSimulator"
-build "arm64" "MacOSX"
-build "x86_64" "MacOSX"
+
+cd "${CURL_VERSION}"
+build "armv7" "iPhoneOS" "-miphoneos-version-min=9.0"
+build "arm64" "iPhoneOS" "-miphoneos-version-min=9.0"
+build "arm64" "iPhoneSimulator" "-miphonesimulator-version-min=9.0"
+build "x86_64" "iPhoneSimulator" "-miphonesimulator-version-min=9.0"
+build "arm64" "MacOSX" "-mmacosx-version-min=10.13"
+build "x86_64" "MacOSX" "-mmacosx-version-min=10.13"
+build "arm64" "AppleTVOS" "-mappletvos-version-min=9.0"
+build "arm64" "AppleTVSimulator" "-mappletvsimulator-version-min=9.0"
+build "x86_64" "AppleTVSimulator" "-mappletvsimulator-version-min=9.0"
+build "arm64" "WatchOS" "-mwatchos-version-min=9.0"
+build "arm64_32" "WatchOS" "-mwatchos-version-min=9.0"
+build "arm64" "WatchSimulator" "-mwatchsimulator-version-min=9.0"
+build "x86_64" "WatchSimulator" "-mwatchsimulator-version-min=9.0"
+cd ..
 
 echo -e "Cleaning up"
 rm -rf ${CURL_VERSION}

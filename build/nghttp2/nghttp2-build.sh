@@ -15,7 +15,11 @@
 
 # --- Edit this to update version ---
 
-NGHTTP2_VERSION="nghttp2-1.57.0"
+set -e
+
+NGHTTP2_VERSION="nghttp2-1.58.0"
+
+CC_BITCODE_FLAG="-fembed-bitcode"
 DEVELOPER=$(xcode-select -print-path)
 
 # Check to see if pkg-config is already installed
@@ -45,30 +49,17 @@ fi
 build() {
 	ARCH=$1
 	PLATFORM=$2
-
-	pushd . >/dev/null
-	cd "${NGHTTP2_VERSION}"
-
-	CC_BITCODE_FLAG="-fembed-bitcode"
+	min_version=$3
 
 	sdk_cfg="-isysroot ${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}.sdk"
 	arch_cfg="-arch ${ARCH}"
-	if [[ "${PLATFORM}" == "MacOSX" ]]; then
-		export DEPLOYMENT_TARGET=10.13
-		min_version="-mmacosx-version-min=$DEPLOYMENT_TARGET"
-	else
-		export DEPLOYMENT_TARGET=9.0
-		if [[ "${PLATFORM}" == "iPhoneOS" ]]; then
-			min_version="-miphoneos-version-min=$DEPLOYMENT_TARGET"
-		else
-			min_version="-miphonesimulator-version-min=$DEPLOYMENT_TARGET"
-		fi
-	fi
+
 	export CFLAGS="${arch_cfg} ${sdk_cfg} ${CC_BITCODE_FLAG} ${min_version}"
 
 	echo -e "Building ${NGHTTP2_VERSION} for ${PLATFORM} ${ARCH}"
 
-	host_cfg="--host=${ARCH}-apple-darwin"
+#	host_cfg="--host=${ARCH}-apple-darwin"
+	host_cfg="--host=arm64-apple-darwin"
 
 	common_cfg="--disable-shared --enable-lib-only"
 	destination_path="${build_dir}/${PLATFORM}/${ARCH}"
@@ -99,7 +90,6 @@ build() {
 	fi
 
 	make clean
-	popd >/dev/null
 }
 
 build_dir="$(pwd)/build"
@@ -123,13 +113,24 @@ echo "Unpacking nghttp2"
 tar xfz "${NGHTTP2_VERSION}.tar.gz"
 
 echo -e "${bold}Building iOS libraries (bitcode)${dim}"
-build "armv7" "iPhoneOS"
-build "arm64" "iPhoneSimulator"
-build "arm64" "iPhoneOS"
-build "x86_64" "iPhoneSimulator"
-build "arm64" "MacOSX"
-build "x86_64" "MacOSX"
 
+cd "${NGHTTP2_VERSION}"
+build "armv7" "iPhoneOS" "-miphoneos-version-min=9.0"
+build "arm64" "iPhoneOS" "-miphoneos-version-min=9.0"
+build "arm64" "iPhoneSimulator" "-miphonesimulator-version-min=9.0"
+build "x86_64" "iPhoneSimulator" "-miphonesimulator-version-min=9.0"
+build "arm64" "MacOSX" "-mmacosx-version-min=10.13"
+build "x86_64" "MacOSX" "-mmacosx-version-min=10.13"
+build "arm64" "AppleTVOS" "-mappletvos-version-min=9.0"
+build "arm64" "AppleTVSimulator" "-mappletvsimulator-version-min=9.0"
+build "x86_64" "AppleTVSimulator" "-mappletvsimulator-version-min=9.0"
+build "arm64" "WatchOS" "-mwatchos-version-min=9.0"
+build "arm64_32" "WatchOS" "-mwatchos-version-min=9.0"
+build "arm64" "WatchSimulator" "-mwatchsimulator-version-min=9.0"
+build "x86_64" "WatchSimulator" "-mwatchsimulator-version-min=9.0"
+cd ..
+
+echo -e "Cleaning up"
 rm -rf "${NGHTTP2_VERSION}.tar.gz"
 rm -rf "${NGHTTP2_VERSION}"
 
