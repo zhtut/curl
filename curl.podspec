@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'curl'
-  s.version          = '8.4.0'
+  s.version          = '8.4.1'
   s.summary          = 'libcurl ios amd mac xcframework'
   s.homepage         = 'https://github.com/zhtut/curl'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
