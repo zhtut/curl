@@ -47,17 +47,27 @@ make_IOS_framework() {
 make_stand_in() {
     framework_path="$1"
 
-    rm -rf ${framework_path}/Versions/Current
-    rm -rf ${framework_path}/Headers
-    rm -rf ${framework_path}/${name}
-    rm -rf ${framework_path}/Resources
-    rm -rf ${framework_path}/Modules
+    original_path=$(pwd)
+    # shellcheck disable=SC2164
+    cd $framework_path
 
-    ln -s ${framework_path}/Versions/A ${framework_path}/Versions/Current
-    ln -s ${framework_path}/Versions/A/Headers ${framework_path}/Headers
-    ln -s ${framework_path}/Versions/A/${name} ${framework_path}/${name}
-    ln -s ${framework_path}/Versions/A/Resources ${framework_path}/Resources
-    ln -s ${framework_path}/Versions/A/Modules ${framework_path}/Modules
+    rm -rf Versions/Current
+    rm -rf Headers
+    rm -rf ${name}
+    rm -rf Resources
+    rm -rf Modules
+
+    cd Versions
+    ln -s A Current
+    # shellcheck disable=SC2103
+    cd ..
+    ln -s Versions/A/Headers Headers
+    ln -s Versions/A/${name} ${name}
+    ln -s Versions/A/Resources Resources
+    ln -s Versions/A/Modules Modules
+
+    # shellcheck disable=SC2164
+    cd $original_path
 }
 
 make_mac_framework() {

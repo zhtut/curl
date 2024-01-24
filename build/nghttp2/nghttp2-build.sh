@@ -17,7 +17,7 @@
 
 set -e
 
-NGHTTP2_VERSION="nghttp2-1.58.0"
+NGHTTP2_VERSION="nghttp2-1.59.0"
 
 CC_BITCODE_FLAG="-fembed-bitcode"
 DEVELOPER=$(xcode-select -print-path)

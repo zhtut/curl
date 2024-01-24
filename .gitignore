@@ -5,3 +5,9 @@
 xcuserdata/
 DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.idea/
+bghttp2-*/
+curl-*/
+*.tar.gz
+nghttp2/build/
+curl/build/
