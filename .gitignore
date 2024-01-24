@@ -9,5 +9,5 @@ DerivedData/
 bghttp2-*/
 curl-*/
 *.tar.gz
-nghttp2/build/
-curl/build/
+build/nghttp2/build/
+build/curl/build/
